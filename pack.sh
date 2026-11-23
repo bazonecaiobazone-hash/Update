@@ -2,22 +2,37 @@
 set -e
 
 [ "$(id -u)" -eq 0 ] || { echo "Rode como root"; exit 1; }
-
 export DEBIAN_FRONTEND=noninteractive
 
-# Essenciais para o sistema funcionar bem
-BASE="sudo curl wget git nano xz-utils unzip zip \
-network-manager wpasupplicant \
-pciutils usbutils htop ca-certificates"
+SRC=/etc/apt/sources.list.d/debian.sources
 
-# Firmware (Wi-Fi, placa de vídeo, etc). Precisa do repo non-free-firmware.
-# Se a base é deblobbed de propósito, deixe vazio: FIRMWARE=""
-FIRMWARE="firmware-linux firmware-misc-nonfree firmware-iwlwifi firmware-realtek"
+# Define os componentes do repo
+if [ "$1" = "--firmware" ]; then
+    COMP="main non-free-firmware"
+else
+    COMP="main"
+fi
+
+if [ -f "$SRC" ]; then
+    sed -i "s/^Components: .*/Components: $COMP/" "$SRC"
+elif [ -f /etc/apt/sources.list ]; then
+    sed -i -E "s/(trixie[a-z-]* ).*/\1$COMP/" /etc/apt/sources.list
+fi
 
 apt update
-apt install -y --no-install-recommends $BASE $FIRMWARE
 
-# Limpa para a ISO não crescer à toa
+# Pacotes base
+apt install -y --no-install-recommends \
+  sudo curl wget git nano ca-certificates xz-utils \
+  network-manager pciutils usbutils
+
+# Firmware (só com --firmware)
+if [ "$1" = "--firmware" ]; then
+    apt install -y --no-install-recommends \
+      firmware-iwlwifi firmware-realtek
+fi
+
+# Limpa para a ISO não crescer
 apt clean
 rm -rf /var/lib/apt/lists/*
 
