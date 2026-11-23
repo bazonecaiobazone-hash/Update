@@ -1,0 +1,11 @@
+[Unit]
+Description=Extrai data.tar.gz no boot live
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/ext.sh
+
+[Install]
+WantedBy=multi-user.target
